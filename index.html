@@ -1,31 +1,113 @@
 <!doctype html>
 <html lang="pt-br">
   <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>H5P Player — h5p-standalone (CDN)</title>
-    <!-- Player via CDN; troque @latest por uma versão fixa se preferir estabilidade, e.g. @3.8.0 -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/h5p-standalone@latest/dist/styles/h5p.css">
-    <style>
-      html, body { height: 100%; margin: 0; }
-      #h5p-container { width: 100%; min-height: 100vh; }
-    </style>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Ca&ccedil;a-palavras</title>
+    <link rel="stylesheet" href="./style.css">
   </head>
   <body>
-    <div id="h5p-container"></div>
+    <div class="background-layer" aria-hidden="true"></div>
+    <main class="app" id="app" data-state="loading">
+      <header class="task-header">
+        <div class="task-header__icon" aria-hidden="true">
+          <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 16h16v16H12zM36 16h16v16H36zM12 40h16v16H12zM36 40h16v16H36z" fill="currentColor" opacity="0.7"/>
+            <path d="M24 12h4v8h-4zM36 12h4v8h-4zM12 28h8v4h-8zM44 28h8v4h-8zM28 36h4v8h-4zM40 36h4v8h-4z" fill="currentColor"/>
+          </svg>
+        </div>
+        <div class="task-header__content">
+          <p class="task-overline">Desafio interativo</p>
+          <h1 class="task-title">Ca&ccedil;a-palavras</h1>
+          <p id="task-description" class="task-text"></p>
+        </div>
+      </header>
 
-    <script src="https://cdn.jsdelivr.net/npm/h5p-standalone@latest/dist/main.bundle.js" charset="UTF-8"></script>
-    <script>
-      document.addEventListener('DOMContentLoaded', () => {
-        const el = document.getElementById('h5p-container');
-        new H5PStandalone.H5P(el, {
-          // Aponte para a pasta onde você extraiu seu .h5p (que deve conter h5p.json, content/, libraries/)
-          h5pJsonPath: './conteudos/meu-quiz',
-          librariesPath: './conteudos/meu-quiz/libraries',
-          frameJs: 'https://cdn.jsdelivr.net/npm/h5p-standalone@latest/dist/frame.bundle.js',
-          frameCss: 'https://cdn.jsdelivr.net/npm/h5p-standalone@latest/dist/styles/h5p.css',
-        });
-      });
-    </script>
+      <section class="play-area">
+        <div class="stats-deck">
+          <div class="stat-card">
+            <span class="stat-card__icon stat-card__icon--timer" aria-hidden="true"></span>
+            <div class="stat-card__content">
+              <span class="stat-card__label" id="timer-label"></span>
+              <span class="stat-card__value" id="timer-value">00:00</span>
+            </div>
+          </div>
+          <div class="stat-card">
+            <span class="stat-card__icon stat-card__icon--counter" aria-hidden="true"></span>
+            <div class="stat-card__content">
+              <span class="stat-card__label" id="counter-label"></span>
+              <span class="stat-card__value" id="counter-value"></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="game-shell">
+          <div class="grid-wrapper">
+            <div
+              class="grid"
+              id="grid"
+              role="grid"
+              aria-live="polite"
+              aria-label="Grade do caca-palavras"
+              aria-describedby="task-description"
+            ></div>
+          </div>
+
+          <aside class="vocabulary" id="vocabulary" aria-labelledby="vocabulary-title">
+            <div class="vocabulary__header">
+              <span class="vocabulary__icon" aria-hidden="true"></span>
+              <h2 class="vocabulary__title" id="vocabulary-title"></h2>
+            </div>
+            <ul class="vocabulary__list" id="word-list" aria-live="polite"></ul>
+          </aside>
+        </div>
+
+        <div class="feedback" id="feedback" role="status" aria-live="polite"></div>
+
+        <div class="controls">
+          <button type="button" class="btn btn--primary" id="check-btn" data-icon="check">
+            <span class="btn__label">Corrigir</span>
+          </button>
+          <button type="button" class="btn" id="show-solution-btn" data-icon="idea">
+            <span class="btn__label">Mostrar solucao</span>
+          </button>
+          <button type="button" class="btn" id="retry-btn" data-icon="retry">
+            <span class="btn__label">Repetir</span>
+          </button>
+        </div>
+      </section>
+    </main>
+
+    <div class="modal-backdrop" data-modal="time-limit" hidden>
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="time-limit-title">
+        <div class="modal__header">
+          <span class="modal__icon" aria-hidden="true"></span>
+          <div>
+            <h2 class="modal__title" id="time-limit-title">Tempo esgotado</h2>
+            <p class="modal__subtitle">O limite de tempo foi atingido.</p>
+          </div>
+        </div>
+        <p class="modal__body">
+          Para tentar novamente desde o inicio, clique em Reiniciar. Todos os progressos desta rodada serao perdidos.
+        </p>
+        <div class="modal__actions">
+          <button type="button" class="btn btn--primary" id="time-limit-retry-btn" data-icon="retry">
+            <span class="btn__label">Reiniciar</span>
+          </button>
+          <button type="button" class="btn btn--ghost" id="time-limit-close-btn">
+            <span class="btn__label">Fechar</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <template id="word-item-template">
+      <li class="word-item">
+        <span class="word-item__label"></span>
+        <em class="word-item__state" aria-hidden="true">&bull;</em>
+      </li>
+    </template>
+
+    <script type="module" src="./scripts.js"></script>
   </body>
 </html>

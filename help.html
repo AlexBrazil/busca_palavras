@@ -1,0 +1,79 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Guia rapido do caca-palavras</title>
+</head>
+<body>
+<h1>Como configurar uma nova atividade</h1>
+<p>Use este roteiro para preencher o arquivo <code>data.json</code> do caca-palavras.</p>
+
+<h2>Antes de comecar</h2>
+<ul>
+  <li>Faca uma copia de seguranca de <code>data.json</code>.</li>
+  <li>Edite com um editor de texto simples e salve em formato UTF-8.</li>
+  <li>Ao terminar, salve e atualize <code>index.html</code> no navegador para testar.</li>
+</ul>
+
+<h2>Campos principais</h2>
+<h3><code>mode</code></h3>
+<ul>
+  <li>"palavra": mostra a lista com as mesmas palavras que estao escondidas.</li>
+  <li>"dica": mostra apenas dicas; cada item da lista precisa ter o texto em <code>hint</code>.</li>
+  <li>Qualquer outro valor cai no modo "palavra" automaticamente.</li>
+</ul>
+
+<h3><code>taskDescription</code></h3>
+<ul>
+  <li>Mensagem inicial exibida acima da grade. Aceita texto simples e HTML basico.</li>
+</ul>
+
+<h3><code>wordList</code></h3>
+<p>Pode ser uma lista de objetos ou uma string com palavras separadas por virgula. Uso recomendado (principalmente para o modo "dica"):</p>
+<pre><code>"wordList": [
+  { "word": "azul", "hint": "Cor do ceu em dia limpo" },
+  { "word": "verde", "hint": "Mistura de azul com amarelo" }
+]</code></pre>
+<ul>
+  <li><code>word</code>: texto a ser encontrado. O sistema converte para maiusculas automaticamente.</li>
+  <li><code>hint</code>: dica opcional no modo "palavra" e obrigatoria no modo "dica".</li>
+  <li>Itens repetidos sao ignorados; deixe apenas uma ocorrencia.</li>
+</ul>
+
+<h3><code>behaviour</code></h3>
+<p>Controla como o tabuleiro e os botoes se comportam.</p>
+<ul>
+  <li><code>orientations</code>: liga ou desliga direcoes. Defina <code>true</code> para permitir e <code>false</code> para bloquear. Opcoes: <code>horizontal</code>, <code>horizontalBack</code> (horizontal invertido), <code>vertical</code>, <code>verticalUp</code> (de baixo para cima), <code>diagonal</code>, <code>diagonalBack</code>, <code>diagonalUp</code> e <code>diagonalUpBack</code>.</li>
+  <li><code>fillPool</code>: caracteres usados para completar as casas vazias. Use letras sem acento, por exemplo <code>"ABCDEFGHIJKLMNOPQRSTUVWXYZ"</code>.</li>
+  <li><code>preferOverlap</code>: mantenha <code>true</code> para incentivar cruzamentos entre as palavras.</li>
+  <li><code>showVocabulary</code>: quando <code>false</code>, esconde a lista de palavras/dicas. O modo "dica" sempre reativa esse campo para mostrar as pistas.</li>
+  <li><code>enableShowSolution</code> e <code>enableRetry</code>: exibem os botoes "Mostrar solucao" e "Repetir".</li>
+  <li><code>timeLimitSeconds</code>: limite de tempo em segundos. Use zero ou remova para jogar sem cronometro regressivo.</li>
+</ul>
+
+<h3><code>l10n</code></h3>
+<ul>
+  <li>Permite trocar textos da interface (botoes, contadores e mensagens).</li>
+  <li>Mantenha os marcadores, como <code>@found</code>, <code>@totalWords</code> e <code>@score</code>, pois sao substituidos dinamicamente.</li>
+</ul>
+
+<h3><code>accessibility</code></h3>
+<ul>
+  <li>Configura recursos extras. Atualmente ha suporte para o widget VLibras:</li>
+</ul>
+<pre><code>"accessibility": {
+  "vlibras": { "desktop": true, "mobile": false }
+}</code></pre>
+<ul>
+  <li>Defina <code>true</code> para carregar o plugin na versao correspondente.</li>
+</ul>
+
+<h2>Checklist final</h2>
+<ul>
+  <li>Verifique se todas as palavras possuem pelo menos duas letras.</li>
+  <li>No modo "dica", confirme que cada item tem <code>hint</code>.</li>
+  <li>Certifique-se de que o JSON esta valido (sem virgulas sobrando ou aspas faltando).</li>
+  <li>Teste a atividade marcando palavras certas e erradas, e valide os botoes.</li>
+</ul>
+</body>
+</html>
