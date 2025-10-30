@@ -16,7 +16,8 @@ const DEFAULT_L10N = {
   found: "@found de @totalWords encontrada(s)",
   timeSpent: "Tempo gasto",
   score: "Voc\u00ea conseguiu @score de @total pontos",
-  wordListHeader: "Palavras"
+  wordListHeader: "Palavras",
+  invalidSelection: "Caminho nao corresponde a nenhuma palavra."
 };
 
 const DEFAULT_BEHAVIOUR = {
@@ -50,6 +51,9 @@ const state = {
   timerId: null,
   elapsedSeconds: 0,
   locked: false,
+  feedbackMessage: "",
+  feedbackTimerId: null,
+  lastPointerType: "mouse",
   accessibility: {
     vlibras: {
       desktop: false,
@@ -65,10 +69,14 @@ const state = {
   selection: {
     active: false,
     pointerId: null,
+    pointerType: null,
     start: null,
     path: [],
-    cells: []
-  }
+    cells: [],
+    captureTarget: null,
+    dragged: false
+  },
+  tapSelection: null
 };
 
 const elements = {
@@ -358,6 +366,7 @@ function startNewGame() {
     entry.solved = false;
   });
   clearSelection();
+  clearTapSelection();
   stopTimer();
   updateFeedback("");
 
@@ -653,14 +662,36 @@ function handlePointerDown(event) {
   }
 
   event.preventDefault();
+  if (typeof cell.focus === "function") {
+    cell.focus();
+  }
+
   const row = Number(cell.dataset.row);
   const col = Number(cell.dataset.col);
+  const pointerType = event.pointerType || "mouse";
 
+  if (pointerType !== "touch") {
+    clearTapSelection();
+  }
+
+  state.selection.pointerType = pointerType;
   state.selection.active = true;
   state.selection.pointerId = event.pointerId;
   state.selection.start = { row, col };
   state.selection.path = [{ row, col }];
   state.selection.cells = [cell];
+  state.selection.captureTarget = null;
+  state.selection.dragged = false;
+  state.lastPointerType = pointerType;
+
+  if (typeof cell.setPointerCapture === "function" && event.pointerId != null) {
+    try {
+      cell.setPointerCapture(event.pointerId);
+      state.selection.captureTarget = cell;
+    } catch (error) {
+      state.selection.captureTarget = null;
+    }
+  }
 
   applyPreview([cell]);
 
@@ -672,6 +703,11 @@ function handlePointerDown(event) {
 function handlePointerMove(event) {
   if (!state.selection.active || event.pointerId !== state.selection.pointerId) {
     return;
+  }
+
+  state.selection.dragged = true;
+  if (state.selection.pointerType === "touch") {
+    clearTapSelection();
   }
 
   event.preventDefault();
@@ -687,6 +723,54 @@ function handlePointerUp(event) {
   if (!state.selection.active || event.pointerId !== state.selection.pointerId) {
     return;
   }
+
+  const wasTap =
+    state.selection.pointerType === "touch" && !state.selection.dragged;
+
+  if (wasTap) {
+    const releaseCell =
+      getCellAtPoint(event.clientX, event.clientY) ||
+      state.selection.cells[state.selection.cells.length - 1] ||
+      null;
+    const releaseCoords = releaseCell
+      ? {
+          row: Number(releaseCell.dataset.row),
+          col: Number(releaseCell.dataset.col)
+        }
+      : state.selection.start;
+
+    if (state.tapSelection) {
+      const anchor = state.tapSelection;
+      clearTapSelection();
+      const anchorPosition = { row: anchor.row, col: anchor.col };
+      const path = computeStraightPath(anchorPosition, releaseCoords);
+      if (!path || path.length <= 1) {
+        clearSelection();
+        if (
+          releaseCoords &&
+          releaseCoords.row === anchorPosition.row &&
+          releaseCoords.col === anchorPosition.col
+        ) {
+          return;
+        }
+        setTapSelection(anchorPosition);
+        showSelectionError();
+        return;
+      }
+      state.selection.start = anchorPosition;
+      state.selection.path = path;
+      const cells = path.map((position) => getCellNode(position.row, position.col));
+      applyPreview(cells);
+      finalizeSelection();
+      return;
+    }
+
+    const start = state.selection.start;
+    clearSelection();
+    setTapSelection(start);
+    return;
+  }
+
   finalizeSelection();
 }
 
@@ -798,6 +882,7 @@ function clearPreview() {
 }
 
 function finalizeSelection() {
+  clearTapSelection();
   const path = state.selection.path;
   clearSelectionListeners();
   if (!Array.isArray(path) || path.length === 0) {
@@ -810,19 +895,25 @@ function finalizeSelection() {
 
   if (candidate && !candidate.found) {
     markWordAsFound(candidate);
+  } else if (!candidate && path.length > 1) {
+    showSelectionError();
   }
 
   clearSelection();
 }
 
 function clearSelection() {
+  releasePointerCapture();
   clearPreview();
   state.selection = {
     active: false,
     pointerId: null,
+    pointerType: null,
     start: null,
     path: [],
-    cells: []
+    cells: [],
+    captureTarget: null,
+    dragged: false
   };
   clearSelectionListeners();
 }
@@ -833,6 +924,75 @@ function clearSelectionListeners() {
   window.removeEventListener("pointercancel", handlePointerCancel);
 }
 
+function releasePointerCapture() {
+  const target = state.selection.captureTarget;
+  const pointerId = state.selection.pointerId;
+  if (!target || pointerId == null) {
+    return;
+  }
+  if (typeof target.releasePointerCapture !== "function") {
+    state.selection.captureTarget = null;
+    return;
+  }
+  if (typeof target.hasPointerCapture === "function") {
+    if (!target.hasPointerCapture(pointerId)) {
+      state.selection.captureTarget = null;
+      return;
+    }
+  }
+  try {
+    target.releasePointerCapture(pointerId);
+  } catch (error) {
+    // ignore release failures
+  } finally {
+    state.selection.captureTarget = null;
+  }
+}
+
+function setTapSelection(position) {
+  if (
+    !position ||
+    typeof position.row !== "number" ||
+    typeof position.col !== "number"
+  ) {
+    clearTapSelection();
+    return;
+  }
+
+  clearTapSelection();
+
+  const cell = getCellNode(position.row, position.col);
+  if (cell) {
+    cell.classList.add("grid__cell--preview");
+    cell.dataset.previewing = "true";
+    if ((cell.dataset.status || "default") === "default") {
+      cell.setAttribute("aria-selected", "true");
+    }
+  }
+
+  state.tapSelection = {
+    row: position.row,
+    col: position.col,
+    cell: cell || null
+  };
+}
+
+function clearTapSelection() {
+  if (!state.tapSelection) {
+    return;
+  }
+  const { row, col, cell } = state.tapSelection;
+  const targetCell = cell || getCellNode(row, col);
+  if (targetCell) {
+    targetCell.classList.remove("grid__cell--preview");
+    delete targetCell.dataset.previewing;
+    if ((targetCell.dataset.status || "default") === "default") {
+      targetCell.setAttribute("aria-selected", "false");
+    }
+  }
+  state.tapSelection = null;
+}
+
 function markWordAsFound(wordData) {
   wordData.found = true;
   if (wordData.entry) {
@@ -840,6 +1000,14 @@ function markWordAsFound(wordData) {
     wordData.entry.solved = true;
   }
   state.foundCount += 1;
+
+  if (
+    state.lastPointerType === "touch" &&
+    typeof navigator !== "undefined" &&
+    typeof navigator.vibrate === "function"
+  ) {
+    navigator.vibrate(30);
+  }
 
   highlightPath(wordData.path, "grid__cell--found", "found");
   updateWordAccessibility(wordData, "found");
@@ -1023,6 +1191,7 @@ function handleShowSolution() {
     return;
   }
   stopTimer();
+  clearTapSelection();
   state.locked = true;
   toggleButtons(false);
 
@@ -1098,7 +1267,16 @@ function handleRetry() {
   startNewGame();
 }
 
+function clearFeedbackTimer() {
+  if (state.feedbackTimerId !== null && typeof window !== "undefined") {
+    window.clearTimeout(state.feedbackTimerId);
+  }
+  state.feedbackTimerId = null;
+}
+
 function updateFeedback(message) {
+  clearFeedbackTimer();
+  state.feedbackMessage = message || "";
   if (!message) {
     elements.feedback.dataset.visible = "false";
     elements.feedback.textContent = "";
@@ -1106,6 +1284,24 @@ function updateFeedback(message) {
   }
   elements.feedback.dataset.visible = "true";
   elements.feedback.textContent = message;
+}
+
+function setTransientFeedback(message, duration = 1500) {
+  updateFeedback(message);
+  if (typeof window === "undefined") {
+    return;
+  }
+  state.feedbackTimerId = window.setTimeout(() => {
+    if (state.feedbackMessage === message) {
+      updateFeedback("");
+    }
+  }, duration);
+}
+
+function showSelectionError() {
+  const fallbackMessage = DEFAULT_L10N.invalidSelection;
+  const message = state.l10n.invalidSelection || fallbackMessage;
+  setTransientFeedback(message, 1600);
 }
 
 function randomChoice(items) {
