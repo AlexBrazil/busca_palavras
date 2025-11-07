@@ -24,21 +24,33 @@
       </header>
 
       <section class="play-area">
-        <div class="stats-deck">
-          <div class="stat-card">
-            <span class="stat-card__icon stat-card__icon--timer" aria-hidden="true"></span>
-            <div class="stat-card__content">
-              <span class="stat-card__label" id="timer-label"></span>
-              <span class="stat-card__value" id="timer-value">00:00</span>
+        <div class="stats-bar">
+          <div class="stats-deck">
+            <div class="stat-card">
+              <span class="stat-card__icon stat-card__icon--timer" aria-hidden="true"></span>
+              <div class="stat-card__content">
+                <span class="stat-card__label" id="timer-label"></span>
+                <span class="stat-card__value" id="timer-value">00:00</span>
+              </div>
+            </div>
+            <div class="stat-card">
+              <span class="stat-card__icon stat-card__icon--counter" aria-hidden="true"></span>
+              <div class="stat-card__content">
+                <span class="stat-card__label" id="counter-label"></span>
+                <span class="stat-card__value" id="counter-value"></span>
+              </div>
             </div>
           </div>
-          <div class="stat-card">
-            <span class="stat-card__icon stat-card__icon--counter" aria-hidden="true"></span>
-            <div class="stat-card__content">
-              <span class="stat-card__label" id="counter-label"></span>
-              <span class="stat-card__value" id="counter-value"></span>
-            </div>
-          </div>
+          <button
+            type="button"
+            class="btn btn--ghost fullscreen-btn"
+            id="fullscreen-btn"
+            data-state="enter"
+            data-icon="fullscreen"
+          >
+            <span class="fullscreen-btn__icon" aria-hidden="true"></span>
+            <span class="btn__label" id="fullscreen-label">Tela cheia</span>
+          </button>
         </div>
 
         <div class="game-shell">

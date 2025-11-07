@@ -17,7 +17,9 @@ const DEFAULT_L10N = {
   timeSpent: "Tempo gasto",
   score: "Voc\u00ea conseguiu @score de @total pontos",
   wordListHeader: "Palavras",
-  invalidSelection: "Caminho nao corresponde a nenhuma palavra."
+  invalidSelection: "Caminho nao corresponde a nenhuma palavra.",
+  fullscreenEnter: "Tela cheia",
+  fullscreenExit: "Sair da tela cheia"
 };
 
 const DEFAULT_BEHAVIOUR = {
@@ -91,6 +93,8 @@ const state = {
   introPreviousFocus: null,
   introVisible: false,
   playStarted: true,
+  isFullscreen: false,
+  fullscreenSupported: false,
   selection: {
     active: false,
     pointerId: null,
@@ -123,6 +127,8 @@ const elements = {
   timeLimitModal: document.querySelector('[data-modal="time-limit"]'),
   timeLimitRetryBtn: document.getElementById("time-limit-retry-btn"),
   timeLimitCloseBtn: document.getElementById("time-limit-close-btn"),
+  fullscreenBtn: document.getElementById("fullscreen-btn"),
+  fullscreenLabel: document.getElementById("fullscreen-label"),
   introPanel: document.querySelector("[data-intro-panel]"),
   introEyebrow: document.getElementById("intro-panel-eyebrow"),
   introTitle: document.getElementById("intro-panel-title"),
@@ -143,6 +149,7 @@ async function init() {
   const data = await loadConfig();
   setupConfig(data);
   setupUI();
+  setupFullscreenControls();
   setupInstructionPanel();
   setupAccessibilityFeatures();
   attachEventListeners();
@@ -444,7 +451,65 @@ function setupUI() {
     elements.retryBtn.disabled = false;
   }
 
+  updateFullscreenButton();
   updateFeedback("");
+}
+
+function setupFullscreenControls() {
+  if (!elements.fullscreenBtn) {
+    return;
+  }
+
+  state.fullscreenSupported = supportsFullscreen();
+
+  if (!state.fullscreenSupported) {
+    updateFullscreenButton();
+    elements.fullscreenBtn.disabled = true;
+    elements.fullscreenBtn.setAttribute("aria-disabled", "true");
+    elements.fullscreenBtn.setAttribute("title", "Modo tela cheia indispon\u00edvel.");
+    return;
+  }
+
+  elements.fullscreenBtn.disabled = false;
+  elements.fullscreenBtn.removeAttribute("aria-disabled");
+  elements.fullscreenBtn.addEventListener("click", handleFullscreenToggle);
+
+  document.addEventListener("fullscreenchange", handleFullscreenChange);
+  document.addEventListener("webkitfullscreenchange", handleFullscreenChange);
+  document.addEventListener("MSFullscreenChange", handleFullscreenChange);
+
+  updateFullscreenButton();
+}
+
+function supportsFullscreen() {
+  if (typeof document === "undefined") {
+    return false;
+  }
+  return Boolean(
+    document.fullscreenEnabled ||
+      document.webkitFullscreenEnabled ||
+      document.mozFullScreenEnabled ||
+      document.msFullscreenEnabled
+  );
+}
+
+function updateFullscreenButton() {
+  if (!elements.fullscreenBtn) {
+    return;
+  }
+  const active = isFullscreenActive();
+  const labelText = active ? state.l10n.fullscreenExit : state.l10n.fullscreenEnter;
+  elements.fullscreenBtn.dataset.state = active ? "exit" : "enter";
+  if (elements.fullscreenLabel) {
+    elements.fullscreenLabel.textContent = labelText;
+  } else {
+    elements.fullscreenBtn.textContent = labelText;
+  }
+  elements.fullscreenBtn.setAttribute("aria-label", labelText);
+  elements.fullscreenBtn.setAttribute("title", labelText);
+  if (!state.fullscreenSupported) {
+    elements.fullscreenBtn.disabled = true;
+  }
 }
 
 function setupInstructionPanel() {
@@ -620,6 +685,81 @@ function attachEventListeners() {
   if (elements.timeLimitCloseBtn) {
     elements.timeLimitCloseBtn.addEventListener("click", handleTimeLimitClose);
   }
+}
+
+function handleFullscreenToggle(event) {
+  event.preventDefault();
+  if (!state.fullscreenSupported) {
+    return;
+  }
+  const target = elements.app || document.documentElement;
+  if (!isFullscreenActive()) {
+    const request = requestFullscreen(target);
+    if (request && typeof request.catch === "function") {
+      request.catch((error) => {
+        console.warn("Falha ao entrar em modo tela cheia.", error);
+      });
+    }
+    return;
+  }
+  const exit = exitFullscreen();
+  if (exit && typeof exit.catch === "function") {
+    exit.catch((error) => {
+      console.warn("Falha ao sair do modo tela cheia.", error);
+    });
+  }
+}
+
+function handleFullscreenChange() {
+  state.isFullscreen = isFullscreenActive();
+  updateFullscreenButton();
+}
+
+function requestFullscreen(target) {
+  if (!target) {
+    return null;
+  }
+  if (target.requestFullscreen) {
+    return target.requestFullscreen();
+  }
+  if (target.webkitRequestFullscreen) {
+    return target.webkitRequestFullscreen();
+  }
+  if (target.mozRequestFullScreen) {
+    return target.mozRequestFullScreen();
+  }
+  if (target.msRequestFullscreen) {
+    return target.msRequestFullscreen();
+  }
+  return null;
+}
+
+function exitFullscreen() {
+  if (document.exitFullscreen) {
+    return document.exitFullscreen();
+  }
+  if (document.webkitExitFullscreen) {
+    return document.webkitExitFullscreen();
+  }
+  if (document.mozCancelFullScreen) {
+    return document.mozCancelFullScreen();
+  }
+  if (document.msExitFullscreen) {
+    return document.msExitFullscreen();
+  }
+  return null;
+}
+
+function isFullscreenActive() {
+  if (typeof document === "undefined") {
+    return false;
+  }
+  return Boolean(
+    document.fullscreenElement ||
+      document.webkitFullscreenElement ||
+      document.mozFullScreenElement ||
+      document.msFullscreenElement
+  );
 }
 
 function startNewGame() {

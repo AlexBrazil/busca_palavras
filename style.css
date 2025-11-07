@@ -138,6 +138,17 @@ body {
   gap: 2rem;
 }
 
+.stats-bar {
+  display: flex;
+  gap: 1rem;
+  align-items: stretch;
+  flex-wrap: wrap;
+}
+
+.stats-bar .stats-deck {
+  flex: 1 1 260px;
+}
+
 .stats-deck {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -488,8 +499,37 @@ body {
   -webkit-mask-image: url("./assets/icons/retry.svg");
 }
 
+.btn[data-icon="fullscreen"]::before {
+  display: none;
+}
+
 .btn__label {
   display: inline-block;
+}
+
+.fullscreen-btn {
+  min-width: 190px;
+  justify-content: center;
+  gap: 0.6rem;
+}
+
+.fullscreen-btn__icon {
+  width: 1.2rem;
+  height: 1.2rem;
+  display: inline-block;
+  background-color: currentColor;
+  mask: no-repeat center / contain;
+  -webkit-mask: no-repeat center / contain;
+}
+
+.fullscreen-btn[data-state="enter"] .fullscreen-btn__icon {
+  mask-image: url("./assets/icons/zoom-in.svg");
+  -webkit-mask-image: url("./assets/icons/zoom-in.svg");
+}
+
+.fullscreen-btn[data-state="exit"] .fullscreen-btn__icon {
+  mask-image: url("./assets/icons/zoom-out.svg");
+  -webkit-mask-image: url("./assets/icons/zoom-out.svg");
 }
 
 .btn:hover:not([disabled]) {
@@ -739,6 +779,14 @@ body {
 
   .game-shell {
     grid-template-columns: 1fr;
+  }
+
+  .stats-bar {
+    flex-direction: column;
+  }
+
+  .fullscreen-btn {
+    width: 100%;
   }
 }
 

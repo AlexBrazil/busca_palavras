@@ -142,7 +142,9 @@ Permite personalizar labels e mensagens. Todos os campos sao opcionais; se omiti
   "found": "@found de @totalWords descobertas",
   "timeSpent": "Tempo gasto",
   "score": "Voce descobriu @score de @total palavras",
-  "wordListHeader": "Dicas"
+  "wordListHeader": "Dicas",
+  "fullscreenEnter": "Tela cheia",
+  "fullscreenExit": "Sair da tela cheia"
 }
 ```
 
@@ -153,6 +155,7 @@ Permite personalizar labels e mensagens. Todos os campos sao opcionais; se omiti
 - `timeSpent`: legenda exibida acima do relogio.
 - `score`: mensagem apresentada depois de "Corrigir" ou ao terminar o jogo. Use `@score` (palavras encontradas) e `@total`.
 - `wordListHeader`: titulo da coluna lateral de palavras ou dicas.
+- `fullscreenEnter` / `fullscreenExit`: textos exibidos no botao de tela cheia para entrar e sair do modo fullscreen.
 
 ## Checklist rapido
 
