@@ -38,10 +38,32 @@ const DEFAULT_BEHAVIOUR = {
   enableRetry: true
 };
 
+const DEFAULT_INSTRUCTIONS = {
+  enabled: true,
+  showOnLoad: true,
+  showOnRestart: false,
+  eyebrow: "Preparado?",
+  title: "Antes de comecar",
+  body: [
+    "Leia a dica exibida e procure a palavra correta na grade.",
+    "Arraste o mouse ou o dedo para selecionar todas as letras na ordem."
+  ],
+  steps: [
+    "Clique em Corrigir para conferir o progresso.",
+    "Use Mostrar solucao apenas se precisar de ajuda extra."
+  ],
+  startButtonLabel: "Iniciar"
+};
+
 const state = {
   behaviour: null,
   l10n: DEFAULT_L10N,
   mode: "palavra",
+  instructions: {
+    ...DEFAULT_INSTRUCTIONS,
+    body: [...DEFAULT_INSTRUCTIONS.body],
+    steps: [...DEFAULT_INSTRUCTIONS.steps]
+  },
   entries: [],
   gridLetters: [],
   cellElements: [],
@@ -66,6 +88,9 @@ const state = {
   timeLimitSeconds: null,
   timerExpired: false,
   previousFocus: null,
+  introPreviousFocus: null,
+  introVisible: false,
+  playStarted: true,
   selection: {
     active: false,
     pointerId: null,
@@ -97,7 +122,14 @@ const elements = {
   wordTemplate: document.getElementById("word-item-template"),
   timeLimitModal: document.querySelector('[data-modal="time-limit"]'),
   timeLimitRetryBtn: document.getElementById("time-limit-retry-btn"),
-  timeLimitCloseBtn: document.getElementById("time-limit-close-btn")
+  timeLimitCloseBtn: document.getElementById("time-limit-close-btn"),
+  introPanel: document.querySelector("[data-intro-panel]"),
+  introEyebrow: document.getElementById("intro-panel-eyebrow"),
+  introTitle: document.getElementById("intro-panel-title"),
+  introDescription: document.getElementById("intro-panel-description"),
+  introList: document.getElementById("intro-panel-list"),
+  introStartBtn: document.getElementById("intro-start-btn"),
+  introStartLabel: document.getElementById("intro-start-label")
 };
 
 init().catch((error) => {
@@ -111,9 +143,10 @@ async function init() {
   const data = await loadConfig();
   setupConfig(data);
   setupUI();
+  setupInstructionPanel();
   setupAccessibilityFeatures();
   attachEventListeners();
-  startNewGame();
+  startRound(shouldShowIntroOnLoad());
 }
 
 async function loadConfig() {
@@ -126,6 +159,7 @@ async function loadConfig() {
 
 function setupConfig(config) {
   state.l10n = { ...DEFAULT_L10N, ...(config?.l10n || {}) };
+  state.instructions = parseInstructionsConfig(config?.instructions);
   state.behaviour = mergeBehaviour(config?.behaviour || {});
   state.timeLimitSeconds = parseTimeLimitSeconds(state.behaviour.timeLimitSeconds);
 
@@ -197,6 +231,90 @@ function parseTimeLimitSeconds(value) {
     return null;
   }
   return Math.floor(parsed);
+}
+
+function parseInstructionsConfig(instructionsConfig) {
+  const defaults = cloneInstructionDefaults();
+  if (!instructionsConfig || typeof instructionsConfig !== "object") {
+    return defaults;
+  }
+
+  const enabled = instructionsConfig.enabled === false ? false : true;
+  const showOnLoad =
+    instructionsConfig.showOnLoad === false ? false : defaults.showOnLoad;
+  const showOnRestart = Boolean(instructionsConfig.showOnRestart);
+
+  const eyebrow = resolveTextValue(instructionsConfig.eyebrow, defaults.eyebrow);
+  const title = resolveTextValue(instructionsConfig.title, defaults.title);
+  const bodySource =
+    instructionsConfig.body ||
+    instructionsConfig.description ||
+    instructionsConfig.content ||
+    defaults.body;
+  const stepsSource =
+    instructionsConfig.steps !== undefined ? instructionsConfig.steps : defaults.steps;
+  const body = normalizeTextArray(bodySource);
+  const steps = normalizeTextArray(stepsSource);
+  const startButtonLabel = resolveTextValue(
+    instructionsConfig.startButtonLabel,
+    defaults.startButtonLabel
+  );
+
+  if (!enabled) {
+    return {
+      ...defaults,
+      enabled: false,
+      showOnLoad: false,
+      showOnRestart: false,
+      eyebrow,
+      title,
+      body: body.length > 0 ? body : defaults.body,
+      steps: steps.length > 0 ? steps : [],
+      startButtonLabel
+    };
+  }
+
+  return {
+    enabled: true,
+    showOnLoad,
+    showOnRestart,
+    eyebrow,
+    title,
+    body: body.length > 0 ? body : defaults.body,
+    steps,
+    startButtonLabel
+  };
+}
+
+function cloneInstructionDefaults() {
+  return {
+    ...DEFAULT_INSTRUCTIONS,
+    body: [...DEFAULT_INSTRUCTIONS.body],
+    steps: [...DEFAULT_INSTRUCTIONS.steps]
+  };
+}
+
+function normalizeTextArray(value) {
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    return trimmed ? [trimmed] : [];
+  }
+  if (Array.isArray(value)) {
+    return value
+      .map((item) => (typeof item === "string" ? item.trim() : ""))
+      .filter(Boolean);
+  }
+  return [];
+}
+
+function resolveTextValue(value, fallback) {
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (trimmed.length > 0) {
+      return trimmed;
+    }
+  }
+  return fallback;
 }
 
 function normalizeEntries(wordList, mode) {
@@ -329,6 +447,159 @@ function setupUI() {
   updateFeedback("");
 }
 
+function setupInstructionPanel() {
+  if (!elements.introPanel) {
+    return;
+  }
+  if (!state.instructions.enabled) {
+    hideInstructionPanel();
+    return;
+  }
+  renderInstructionPanel();
+}
+
+function renderInstructionPanel() {
+  if (!elements.introPanel || !state.instructions.enabled) {
+    return;
+  }
+  const { eyebrow, title, body, steps, startButtonLabel } = state.instructions;
+  if (elements.introEyebrow) {
+    elements.introEyebrow.textContent = eyebrow;
+  }
+  if (elements.introTitle) {
+    elements.introTitle.textContent = title;
+  }
+  if (elements.introDescription) {
+    elements.introDescription.innerHTML = "";
+    body.forEach((paragraph) => {
+      const text = paragraph.trim();
+      if (!text) {
+        return;
+      }
+      const p = document.createElement("p");
+      p.textContent = text;
+      elements.introDescription.appendChild(p);
+    });
+  }
+  if (elements.introList) {
+    elements.introList.innerHTML = "";
+    if (!steps || steps.length === 0) {
+      elements.introList.hidden = true;
+    } else {
+      elements.introList.hidden = false;
+      steps.forEach((value) => {
+        const content = value.trim();
+        if (!content) {
+          return;
+        }
+        const item = document.createElement("li");
+        item.textContent = content;
+        elements.introList.appendChild(item);
+      });
+    }
+  }
+  if (elements.introStartLabel) {
+    elements.introStartLabel.textContent = startButtonLabel;
+  }
+}
+
+function shouldShowIntroOnLoad() {
+  return Boolean(state.instructions.enabled && state.instructions.showOnLoad);
+}
+
+function shouldShowIntroOnRestart() {
+  return Boolean(state.instructions.enabled && state.instructions.showOnRestart);
+}
+
+function startRound(showIntro) {
+  state.playStarted = !showIntro;
+  startNewGame();
+  if (showIntro && state.instructions.enabled) {
+    openInstructionPanel();
+  } else {
+    hideInstructionPanel();
+  }
+}
+
+function openInstructionPanel() {
+  if (!elements.introPanel || !state.instructions.enabled) {
+    return;
+  }
+  state.introVisible = true;
+  state.introPreviousFocus =
+    document.activeElement && typeof document.activeElement.focus === "function"
+      ? document.activeElement
+      : null;
+  elements.introPanel.hidden = false;
+  if (elements.app) {
+    elements.app.setAttribute("data-intro-open", "true");
+  }
+  setGridDisabledState(true);
+  state.locked = true;
+  toggleButtons(false);
+  stopTimer();
+  window.setTimeout(() => {
+    if (elements.introStartBtn && typeof elements.introStartBtn.focus === "function") {
+      elements.introStartBtn.focus();
+    }
+  }, 0);
+}
+
+function closeInstructionPanel() {
+  if (!state.introVisible || !elements.introPanel) {
+    return;
+  }
+  state.introVisible = false;
+  elements.introPanel.hidden = true;
+  if (elements.app) {
+    elements.app.removeAttribute("data-intro-open");
+  }
+  state.playStarted = true;
+  state.locked = false;
+  setGridDisabledState(false);
+  toggleButtons(true);
+  startTimer();
+  focusFirstGridCell();
+  state.introPreviousFocus = null;
+}
+
+function hideInstructionPanel() {
+  if (!elements.introPanel) {
+    return;
+  }
+  elements.introPanel.hidden = true;
+  if (elements.app) {
+    elements.app.removeAttribute("data-intro-open");
+  }
+  state.introVisible = false;
+  state.introPreviousFocus = null;
+}
+
+function setGridDisabledState(disabled) {
+  if (!elements.grid) {
+    return;
+  }
+  if (disabled) {
+    elements.grid.setAttribute("aria-disabled", "true");
+  } else {
+    elements.grid.removeAttribute("aria-disabled");
+  }
+}
+
+function focusFirstGridCell() {
+  if (!Array.isArray(state.cellElements) || state.cellElements.length === 0) {
+    return;
+  }
+  const firstRow = state.cellElements.find((row) => Array.isArray(row) && row.length > 0);
+  if (!firstRow) {
+    return;
+  }
+  const firstCell = firstRow.find((cell) => cell);
+  if (firstCell && typeof firstCell.focus === "function") {
+    firstCell.focus();
+  }
+}
+
 function setupAccessibilityFeatures() {
   if (shouldLoadVlibras()) {
     injectVlibrasWidget();
@@ -340,6 +611,9 @@ function attachEventListeners() {
   elements.checkBtn.addEventListener("click", handleCheck);
   elements.showSolutionBtn.addEventListener("click", handleShowSolution);
   elements.retryBtn.addEventListener("click", handleRetry);
+  if (elements.introStartBtn) {
+    elements.introStartBtn.addEventListener("click", handleIntroStart);
+  }
   if (elements.timeLimitRetryBtn) {
     elements.timeLimitRetryBtn.addEventListener("click", handleTimeLimitRetry);
   }
@@ -349,13 +623,11 @@ function attachEventListeners() {
 }
 
 function startNewGame() {
-  state.locked = false;
+  state.locked = !state.playStarted;
   state.foundCount = 0;
   state.timerExpired = false;
   closeTimeLimitModal();
-  if (elements.grid) {
-    elements.grid.removeAttribute("aria-disabled");
-  }
+  setGridDisabledState(state.locked);
   state.entries.forEach((entry) => {
     entry.placement = null;
     entry.listItem = null;
@@ -381,8 +653,12 @@ function startNewGame() {
 
   updateCounter();
   resetTimer();
-  toggleButtons(true);
-  startTimer();
+  toggleButtons(state.playStarted);
+  if (state.playStarted) {
+    startTimer();
+  } else {
+    stopTimer();
+  }
 }
 
 function toggleButtons(enabled) {
@@ -1256,15 +1532,19 @@ function closeTimeLimitModal() {
 }
 
 function handleTimeLimitRetry() {
-  startNewGame();
+  startRound(shouldShowIntroOnRestart());
 }
 
 function handleTimeLimitClose() {
   closeTimeLimitModal();
 }
 
+function handleIntroStart() {
+  closeInstructionPanel();
+}
+
 function handleRetry() {
-  startNewGame();
+  startRound(shouldShowIntroOnRestart());
 }
 
 function clearFeedbackTimer() {

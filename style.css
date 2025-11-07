@@ -611,6 +611,113 @@ body {
   justify-content: flex-end;
 }
 
+.intro-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(5, 9, 22, 0.85);
+  backdrop-filter: blur(12px);
+  padding: 1.5rem;
+  z-index: 20;
+}
+
+.intro-overlay[hidden] {
+  display: none;
+}
+
+.intro-panel {
+  width: min(520px, 100%);
+  background: linear-gradient(165deg, rgba(24, 32, 58, 0.97), rgba(11, 17, 32, 0.94));
+  border-radius: 26px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 30px 60px rgba(3, 6, 18, 0.6);
+  padding: clamp(1.75rem, 4vw, 2.5rem);
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.intro-panel__header {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.intro-panel__icon {
+  width: 58px;
+  height: 58px;
+  border-radius: 18px;
+  background: radial-gradient(circle at 35% 30%, rgba(90, 95, 246, 0.55), transparent 65%),
+    rgba(8, 15, 32, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  position: relative;
+}
+
+.intro-panel__icon::after {
+  content: "";
+  position: absolute;
+  inset: 14px;
+  background: rgba(255, 255, 255, 0.85);
+  mask: url("./assets/icons/check.svg") no-repeat center / contain;
+  -webkit-mask: url("./assets/icons/check.svg") no-repeat center / contain;
+  opacity: 0.9;
+}
+
+.intro-panel__eyebrow {
+  margin: 0;
+  font-size: 0.85rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(245, 247, 255, 0.65);
+}
+
+.intro-panel__title {
+  margin: 0.25rem 0 0;
+  font-size: clamp(1.8rem, 4vw, 2.15rem);
+  letter-spacing: -0.01em;
+  color: #ffffff;
+}
+
+.intro-panel__body {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.intro-panel__description p {
+  margin: 0;
+  color: rgba(245, 247, 255, 0.82);
+  line-height: 1.5;
+}
+
+.intro-panel__description p + p {
+  margin-top: 0.75rem;
+}
+
+.intro-panel__list {
+  margin: 0;
+  padding-left: 1.25rem;
+  color: rgba(245, 247, 255, 0.82);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.intro-panel__list[hidden] {
+  display: none;
+}
+
+.intro-panel__list li::marker {
+  color: var(--color-accent);
+}
+
+.intro-panel__start {
+  align-self: flex-end;
+  min-width: 160px;
+}
+
 .modal-backdrop[hidden] {
   display: none;
 }
@@ -668,5 +775,9 @@ body {
 
   .btn {
     justify-content: center;
+  }
+
+  .intro-panel {
+    border-radius: 20px;
   }
 }

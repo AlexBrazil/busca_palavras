@@ -51,6 +51,34 @@
   <li><code>timeLimitSeconds</code>: limite de tempo em segundos. Use zero ou remova para jogar sem cronometro regressivo.</li>
 </ul>
 
+<h3><code>instructions</code></h3>
+<p>Define o painel exibido antes do jogo comecar.</p>
+<pre><code>"instructions": {
+  "enabled": true,
+  "showOnLoad": true,
+  "showOnRestart": false,
+  "eyebrow": "Preparado?",
+  "title": "Antes de comecar",
+  "body": [
+    "Leia a dica e encontre a palavra correspondente.",
+    "Arraste o mouse ou o dedo para selecionar as letras."
+  ],
+  "steps": [
+    "Use Corrigir para verificar o progresso.",
+    "Clique em Mostrar solucao apenas se precisar."
+  ],
+  "startButtonLabel": "Iniciar desafio"
+}</code></pre>
+<ul>
+  <li><code>enabled</code>: ativa/desativa o painel.</li>
+  <li><code>showOnLoad</code>: determina se o painel abre ao carregar a pagina.</li>
+  <li><code>showOnRestart</code>: reabre o painel quando o jogador clica em <em>Repetir</em> ou reinicia apos o tempo esgotado.</li>
+  <li><code>eyebrow</code> e <code>title</code>: textos exibidos no topo.</li>
+  <li><code>body</code>: lista de paragrafos (texto corrido).</li>
+  <li><code>steps</code>: lista opcional exibida como marcadores.</li>
+  <li><code>startButtonLabel</code>: texto do botao que fecha o painel e aciona o cronometro.</li>
+</ul>
+
 <h3><code>l10n</code></h3>
 <ul>
   <li>Permite trocar textos da interface (botoes, contadores e mensagens).</li>

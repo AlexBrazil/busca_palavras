@@ -78,6 +78,33 @@
       </section>
     </main>
 
+    <div
+      class="intro-overlay"
+      data-intro-panel
+      hidden
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="intro-panel-title"
+      aria-describedby="intro-panel-description"
+    >
+      <div class="intro-panel">
+        <div class="intro-panel__header">
+          <span class="intro-panel__icon" aria-hidden="true"></span>
+          <div class="intro-panel__titles">
+            <p class="intro-panel__eyebrow" id="intro-panel-eyebrow">Preparado?</p>
+            <h2 class="intro-panel__title" id="intro-panel-title">Leia as instru&ccedil;&otilde;es</h2>
+          </div>
+        </div>
+        <div class="intro-panel__body">
+          <div class="intro-panel__description" id="intro-panel-description"></div>
+          <ul class="intro-panel__list" id="intro-panel-list"></ul>
+        </div>
+        <button type="button" class="btn btn--primary intro-panel__start" id="intro-start-btn">
+          <span class="btn__label" id="intro-start-label">Iniciar</span>
+        </button>
+      </div>
+    </div>
+
     <div class="modal-backdrop" data-modal="time-limit" hidden>
       <div class="modal" role="dialog" aria-modal="true" aria-labelledby="time-limit-title">
         <div class="modal__header">

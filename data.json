@@ -24,6 +24,19 @@
     "enableRetry": true,
     "timeLimitSeconds": 30
   },
+  "instructions": {
+    "title": "Antes de comecar",
+    "body": [
+      "Leia a dica e procure a palavra correspondente na grade.",
+      "Arraste o dedo ou o mouse para selecionar todas as letras."
+    ],
+    "steps": [
+      "Clique em Corrigir para ver seu desempenho.",
+      "Use Mostrar solucao apenas se ficar preso."
+    ],
+    "startButtonLabel": "Iniciar desafio",
+    "showOnRestart": false
+  },
   "accessibility": {
     "vlibras": {
       "desktop": true,

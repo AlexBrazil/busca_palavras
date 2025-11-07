@@ -81,6 +81,38 @@ Controla como o tabuleiro e montado e quais botoes aparecem:
 - `enableRetry`: controla se o botao "Repetir" aparece, permitindo gerar uma nova grade.
 - `timeLimitSeconds`: limite de tempo em segundos para concluir a atividade. Use `0` ou omita o campo para desativar o cronometro regressivo. Ao atingir o limite, a atividade bloqueia as interacoes e exibe uma modal oferecendo reinicio.
 
+## instructions
+
+Configura o painel de instrucoes que aparece antes do cronometro comecar.
+
+```json
+"instructions": {
+  "enabled": true,
+  "showOnLoad": true,
+  "showOnRestart": false,
+  "eyebrow": "Preparado?",
+  "title": "Antes de comecar",
+  "body": [
+    "Leia a dica e encontre a palavra correspondente.",
+    "Arraste o mouse ou o dedo para selecionar as letras."
+  ],
+  "steps": [
+    "Use Corrigir para verificar o progresso.",
+    "Clique em Mostrar solucao apenas se precisar."
+  ],
+  "startButtonLabel": "Iniciar desafio"
+}
+```
+
+- `enabled`: define se o painel sera exibido (`true`) ou ignorado (`false`).
+- `showOnLoad`: quando `true`, o painel abre automaticamente no carregamento inicial.
+- `showOnRestart`: reabre o painel toda vez que o jogador clicar em **Repetir** ou reiniciar apos o tempo limite.
+- `eyebrow`: pequeno texto acima do titulo (ex.: "Preparado?").
+- `title`: titulo principal do painel.
+- `body`: lista de paragrafos exibidos como texto corrido.
+- `steps`: lista opcional mostrada como marcadores.
+- `startButtonLabel`: rotulo do botao que fecha o painel e inicia o cronometro.
+
 ## accessibility
 
 Configura recursos complementares de acessibilidade.
